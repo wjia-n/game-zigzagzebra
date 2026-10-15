@@ -83,6 +83,8 @@ const arcadeConfig = ArcadeConfig(
   fallDown: false,
   tip1Id: 'zigzagzebrapancake',
   tip2Id: 'zigzagzebracookie',
-  tip1Label: '💛 Buy me a pancake',
-  tip2Label: '💛 Buy me a cookie',
+  tip1Label: '💛 Buy me a pancake for Zigzag Zebra',
+
+  tip2Label: '💛 Buy me a cookie for Zigzag Zebra',
+
 );
