@@ -52,14 +52,14 @@ class _SupportScreenState extends State<SupportScreen> {
       backgroundColor: c.darkColor,
       appBar: AppBar(title: const Text('Support'), backgroundColor: c.primaryColor, foregroundColor: Colors.white),
       body: ListView(padding: const EdgeInsets.all(20), children: [
-        Center(child: Text(c.playerEmoji, style: const TextStyle(fontSize: 64))),
+        Center(child: Text(c.playerEmoji, style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 64))),
         const SizedBox(height: 8),
-        const Center(child: Text('💛 100% FREE, FOREVER',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
+        const Center(child: Text('💛 EVERYTHING INCLUDED',
+            style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold))),
         const SizedBox(height: 8),
         const Center(child: Text(
-          'Every theme, shape and feature is already unlocked.\nTips are purely optional — they just make our day!',
-          textAlign: TextAlign.center, style: TextStyle(color: Colors.white70))),
+          'Every theme, shape and feature is already in the game.\nTips are purely optional — they just make our day!',
+          textAlign: TextAlign.center, style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white70))),
         const SizedBox(height: 20),
         if (_thanks != null)
           Container(
@@ -68,7 +68,7 @@ class _SupportScreenState extends State<SupportScreen> {
             decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12)),
             child: Text(_thanks!, textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.amber, fontWeight: FontWeight.bold)),
           ),
         _tipBtn(c.tip1Label, c.tip1Id, Colors.amber.shade700),
         const SizedBox(height: 10),
@@ -84,10 +84,10 @@ class _SupportScreenState extends State<SupportScreen> {
               if (kIsWeb) return; // no store listing on web
               InAppReview.instance.openStoreListing();
             },
-          child: const Text('Rate us ⭐', style: TextStyle(color: Colors.white70)),
+          child: const Text('Rate us ⭐', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white70)),
         ),
         const SizedBox(height: 12),
-        const Center(child: Text('Credits: WAJIHA', style: TextStyle(color: Colors.white38, fontSize: 12))),
+        const Center(child: Text('Credits: WAJIHA', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white38, fontSize: 12))),
       ]),
     );
   }
@@ -99,7 +99,7 @@ class _SupportScreenState extends State<SupportScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       onPressed: () => _tip(productId, label),
-      child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      child: Text(label, style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 16, fontWeight: FontWeight.bold)),
     ),
   );
 }

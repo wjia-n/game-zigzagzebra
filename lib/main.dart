@@ -17,6 +17,7 @@ class ArcadeApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: config.primaryColor, brightness: Brightness.dark),
         useMaterial3: true,
+        fontFamily: 'AmaticSC',
       ),
       home: SplashScreen(config: config),
     );

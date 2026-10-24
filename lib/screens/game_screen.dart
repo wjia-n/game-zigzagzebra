@@ -83,20 +83,23 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _hud(ArcadeConfig c, ArcadeEngine e) {
     return Container(
-      color: c.primaryColor.withOpacity(0.25),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        _stat('SCORE', '${e.score}'),
-        _stat('COMBO', 'x${e.combo}'),
-        _stat('LEVEL', '${e.level}'),
-        _stat('❤', '${e.lives}'),
+      color: c.primaryColor.withOpacity(0.22),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(children: [
+        Expanded(child: _stat('SCORE', '${e.score}')),
+        Container(width: 1, height: 28, color: Colors.white24),
+        Expanded(child: _stat('COMBO', 'x${e.combo}')),
+        Container(width: 1, height: 28, color: Colors.white24),
+        Expanded(child: _stat('LEVEL', '${e.level}')),
+        Container(width: 1, height: 28, color: Colors.white24),
+        Expanded(child: _stat('❤', '${e.lives}')),
       ]),
     );
   }
 
   Widget _stat(String label, String value) => Column(children: [
-    Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
-    Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+    Text(label, style: const TextStyle(color: Colors.white70, fontSize: 9, fontFamilyFallback: ['Noto Color Emoji'])),
+    Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamilyFallback: ['Noto Color Emoji'])),
   ]);
 
   Widget _playArea(ArcadeConfig c, ArcadeEngine e) {
@@ -128,21 +131,21 @@ class _GameScreenState extends State<GameScreen> {
   Widget _gameOver(ArcadeConfig c, ArcadeEngine e) {
     return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(
       mainAxisAlignment: MainAxisAlignment.center, children: [
-      Text(c.bgEmoji, style: const TextStyle(fontSize: 64)),
+      Text(c.bgEmoji, style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 64)),
       const SizedBox(height: 12),
-      const Text('GAME OVER', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+      const Text('GAME OVER', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
-      Text('Score: ${e.score}', style: const TextStyle(color: Colors.white, fontSize: 22)),
+      Text('Score: ${e.score}', style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white, fontSize: 22)),
       Text('Best combo: x${e.bestCombo}  •  Level ${e.level}',
-          style: const TextStyle(color: Colors.white70)),
+          style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white70)),
       const SizedBox(height: 24),
       ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: c.accentColor,
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16)),
         onPressed: () => setState(() { _saved = false; e.start(); }),
-        child: const Text('PLAY AGAIN', style: TextStyle(fontSize: 18, color: Colors.black))),
+        child: const Text('PLAY AGAIN', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 18, color: Colors.black))),
       TextButton(onPressed: () => Navigator.pop(context),
-          child: const Text('Menu', style: TextStyle(color: Colors.white70))),
+          child: const Text('Menu', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white70))),
     ])));
   }
 }
@@ -156,7 +159,7 @@ class _ArcadePainter extends CustomPainter {
   void _emoji(Canvas cv, String em, double x, double y, double pxSize, Size size, {double opacity = 1}) {
     final tp = TextPainter(textDirection: TextDirection.ltr);
     tp.text = TextSpan(text: em,
-        style: TextStyle(fontSize: pxSize, color: Colors.white.withOpacity(opacity)));
+        style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: pxSize, color: Colors.white.withOpacity(opacity)));
     tp.layout();
     tp.paint(cv, Offset(x * size.width - tp.width / 2, y * size.height - tp.height / 2));
   }
@@ -205,7 +208,7 @@ class _ArcadePainter extends CustomPainter {
     final e = engine;
     final tp = TextPainter(textDirection: TextDirection.ltr);
     tp.text = TextSpan(text: config.bgEmoji,
-        style: TextStyle(fontSize: 26, color: Colors.white.withOpacity(0.07)));
+        style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 26, color: Colors.white.withOpacity(0.07)));
     tp.layout();
     for (int i = 0; i < 10; i++) {
       tp.paint(canvas, Offset((i * 113) % size.width, (i * 67) % size.height));
@@ -231,7 +234,7 @@ class _ArcadePainter extends CustomPainter {
           Paint()..color = (f.kind == 1 ? Colors.red : config.accentColor).withOpacity(a * 0.7));
     }
     if (e.paused) {
-      tp.text = const TextSpan(text: '⏸ PAUSED', style: TextStyle(fontSize: 34, color: Colors.white));
+      tp.text = const TextSpan(text: '⏸ PAUSED', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 34, color: Colors.white));
       tp.layout();
       tp.paint(canvas, Offset(size.width / 2 - tp.width / 2, size.height / 2 - 30));
     }
