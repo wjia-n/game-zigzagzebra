@@ -488,17 +488,19 @@ class _MenuScreenState extends State<MenuScreen> {
         Positioned(
             left: 24,
             top: 420,
-            child: Opacity(
-                opacity: 0.10,
-                child: Text(c.bgEmoji,
-                    style: const TextStyle(fontSize: 72, fontFamilyFallback: _emojiFb)))),
+            child: IgnorePointer(
+                child: Opacity(
+                    opacity: 0.10,
+                    child: Text(c.bgEmoji,
+                        style: const TextStyle(fontSize: 72, fontFamilyFallback: _emojiFb))))),
         Positioned(
             right: 20,
             top: 620,
-            child: Opacity(
-                opacity: 0.10,
-                child: Text(c.bgEmoji,
-                    style: const TextStyle(fontSize: 56, fontFamilyFallback: _emojiFb)))),
+            child: IgnorePointer(
+                child: Opacity(
+                    opacity: 0.10,
+                    child: Text(c.bgEmoji,
+                        style: const TextStyle(fontSize: 56, fontFamilyFallback: _emojiFb))))),
       ]);
     }
     if (L.motif == 'top-band') {
