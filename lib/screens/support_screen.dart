@@ -96,6 +96,7 @@ class _SupportScreenState extends State<SupportScreen> {
     width: double.infinity,
     child: ElevatedButton(
       style: ElevatedButton.styleFrom(backgroundColor: bg, foregroundColor: Colors.white,
+          elevation: 6, shadowColor: Colors.black54,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       onPressed: () => _tip(productId, label),

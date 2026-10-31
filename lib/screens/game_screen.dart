@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../engine/arcade_engine.dart';
 import '../theme/arcade_config.dart';
+import '../theme/shading.dart';
 import '../services/settings_service.dart';
 import '../services/sound_service.dart';
 
@@ -83,16 +84,21 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _hud(ArcadeConfig c, ArcadeEngine e) {
     return Container(
-      color: c.primaryColor.withOpacity(0.22),
+      decoration: BoxDecoration(
+        color: c.primaryColor.withOpacity(0.22),
+        boxShadow: const [
+          BoxShadow(color: Colors.black54, offset: Offset(0, 3), blurRadius: 6),
+        ],
+      ),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(children: [
-        Expanded(child: _stat('SCORE', '${e.score}')),
-        Container(width: 1, height: 28, color: Colors.white24),
-        Expanded(child: _stat('COMBO', 'x${e.combo}')),
-        Container(width: 1, height: 28, color: Colors.white24),
         Expanded(child: _stat('LEVEL', '${e.level}')),
         Container(width: 1, height: 28, color: Colors.white24),
         Expanded(child: _stat('❤', '${e.lives}')),
+        Container(width: 1, height: 28, color: Colors.white24),
+        Expanded(child: _stat('COMBO', 'x${e.combo}')),
+        Container(width: 1, height: 28, color: Colors.white24),
+        Expanded(child: _stat('SCORE', '${e.score}')),
       ]),
     );
   }
@@ -129,18 +135,22 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _gameOver(ArcadeConfig c, ArcadeEngine e) {
-    return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(
+    return Center(child: Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.white.withOpacity(0.14), Colors.white.withOpacity(0.04)]), border: Border.all(color: Colors.white.withOpacity(0.20)), boxShadow: const [BoxShadow(color: Colors.black54, offset: Offset(0, 8), blurRadius: 16)]), child: Column(
       mainAxisAlignment: MainAxisAlignment.center, children: [
       Text(c.bgEmoji, style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 64)),
       const SizedBox(height: 12),
       const Text('GAME OVER', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
       const SizedBox(height: 8),
-      Text('Score: ${e.score}', style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white, fontSize: 22)),
-      Text('Best combo: x${e.bestCombo}  •  Level ${e.level}',
-          style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white70)),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Flexible(child: Text('Score: ${e.score}', style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white, fontSize: 22))),
+        const SizedBox(width: 16),
+        Flexible(child: Text('Best combo: x${e.bestCombo}  •  Level ${e.level}',
+            style: const TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], color: Colors.white70))),
+      ]),
       const SizedBox(height: 24),
       ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: c.accentColor,
+            elevation: 6, shadowColor: Colors.black54,
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16)),
         onPressed: () => setState(() { _saved = false; e.start(); }),
         child: const Text('PLAY AGAIN', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 18, color: Colors.black))),
@@ -172,40 +182,50 @@ class _ArcadePainter extends CustomPainter {
   }
 
   void _badge(Canvas cv, double x, double y, double r, Size size) {
+    // 3D treatment: every drawn badge shape gets the shaded treatment at the
+    // SAME centre/size as the flat shape it replaces. The heart (case 4) is
+    // an emoji glyph, so it keeps its original flat draw + offset shadow —
+    // see GENERATOR.md "explicitly not shaded".
     final cx = x * size.width, cy = y * size.height;
     final pr = r * size.width;
-    final paint = Paint()..color = config.accentColor.withOpacity(0.9);
-    final dark = Paint()..color = Colors.black.withOpacity(0.25);
-    cv.drawCircle(Offset(cx + 2, cy + 3), pr, dark);
+    final base = config.accentColor.withOpacity(0.9);
     switch (shape % 6) {
-      case 0: cv.drawCircle(Offset(cx, cy), pr, paint); break;
-      case 1: cv.drawRRect(RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(cx, cy), width: pr * 1.7, height: pr * 1.7),
-          const Radius.circular(6)), paint); break;
-      case 2: _star(cv, Offset(cx, cy), pr, paint); break;
-      case 3: final p = Path()
+      case 0:
+        paintShadedCircle(cv, Offset(cx, cy), pr, base);
+        break;
+      case 1:
+        paintBeveledRect(cv, Rect.fromCenter(center: Offset(cx, cy), width: pr * 1.7, height: pr * 1.7), 6, base);
+        break;
+      case 2:
+        final star = Path();
+        for (int i = 0; i < 10; i++) {
+          final ang = -1.5708 + i * 0.6283;
+          final rr = i.isEven ? pr : pr * 0.45;
+          final pt = Offset(cx + rr * cos(ang), cy + rr * sin(ang));
+          if (i == 0) star.moveTo(pt.dx, pt.dy); else star.lineTo(pt.dx, pt.dy);
+        }
+        star.close();
+        paintShadedPath(cv, star, Rect.fromCircle(center: Offset(cx, cy), radius: pr), base);
+        break;
+      case 3:
+        final diamond = Path()
           ..moveTo(cx, cy - pr)..lineTo(cx + pr, cy)..lineTo(cx, cy + pr)..lineTo(cx - pr, cy)..close();
-        cv.drawPath(p, paint); break;
-      case 4: _emoji(cv, '♥', x, y, pr * 2.4, size, opacity: 0.9); break;
-      default: cv.drawOval(Rect.fromCenter(center: Offset(cx, cy), width: pr * 1.9, height: pr * 1.5), paint);
+        paintShadedPath(cv, diamond, Rect.fromCircle(center: Offset(cx, cy), radius: pr), base);
+        break;
+      case 4:
+        cv.drawCircle(Offset(cx + 2, cy + 3), pr, Paint()..color = Colors.black.withOpacity(0.25));
+        _emoji(cv, '♥', x, y, pr * 2.4, size, opacity: 0.9);
+        break;
+      default:
+        paintShadedOval(cv, Rect.fromCenter(center: Offset(cx, cy), width: pr * 1.9, height: pr * 1.5), base);
     }
   }
 
-  void _star(Canvas cv, Offset c, double r, Paint p) {
-    final path = Path();
-    for (int i = 0; i < 10; i++) {
-      final ang = -1.5708 + i * 0.6283;
-      final rr = i.isEven ? r : r * 0.45;
-      final pt = Offset(c.dx + rr * cos(ang), c.dy + rr * sin(ang));
-      if (i == 0) path.moveTo(pt.dx, pt.dy); else path.lineTo(pt.dx, pt.dy);
-    }
-    path.close();
-    cv.drawPath(path, p);
-  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final e = engine;
+    paintDepthBackground(canvas, size, config.darkColor, config.primaryColor);
     final tp = TextPainter(textDirection: TextDirection.ltr);
     tp.text = TextSpan(text: config.bgEmoji,
         style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 26, color: Colors.white.withOpacity(0.07)));
@@ -234,7 +254,7 @@ class _ArcadePainter extends CustomPainter {
           Paint()..color = (f.kind == 1 ? Colors.red : config.accentColor).withOpacity(a * 0.7));
     }
     if (e.paused) {
-      tp.text = const TextSpan(text: '⏸ PAUSED', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 34, color: Colors.white));
+      tp.text = const TextSpan(text: '⏸ PAUSED', style: TextStyle(fontFamilyFallback: const ['Noto Color Emoji'], fontSize: 34, color: Colors.white, shadows: [Shadow(color: Colors.black, offset: Offset(0, 3), blurRadius: 6)]));
       tp.layout();
       tp.paint(canvas, Offset(size.width / 2 - tp.width / 2, size.height / 2 - 30));
     }
@@ -264,20 +284,18 @@ class _ArcadePainter extends CustomPainter {
 
   void _paintJump(Canvas cv, Size size) {
     final e = engine;
-    final platPaint = Paint()..color = config.primaryColor;
-    final platDark = Paint()..color = Colors.black.withOpacity(0.3);
+    // Platforms are beveled by paintBeveledRect below (3D treatment).
     for (final p in e.misc) {
       if (config.fallDown) {
         final gapL = p.a * size.width, gapR = p.t * size.width;
         final y = p.y * size.height;
-        cv.drawRect(Rect.fromLTWH(0, y - 7, gapL, 14), platPaint);
-        cv.drawRect(Rect.fromLTWH(gapR, y - 7, size.width - gapR, 14), platPaint);
+        paintBeveledRect(cv, Rect.fromLTWH(0, y - 7, gapL, 14), 7, config.primaryColor);
+        paintBeveledRect(cv, Rect.fromLTWH(gapR, y - 7, size.width - gapR, 14), 7, config.primaryColor);
       } else {
         final w = p.w * size.width;
         const h = 14.0;
         final rect = Rect.fromCenter(center: Offset(p.x * size.width, p.y * size.height), width: w, height: h);
-        cv.drawRRect(RRect.fromRectAndRadius(rect.translate(0, 3), const Radius.circular(7)), platDark);
-        cv.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(7)), platPaint);
+        paintBeveledRect(cv, rect, 7, config.primaryColor);
       }
     }
     for (final c in e.cols) _emoji(cv, config.collectEmoji, c.x, c.y, c.r * size.width * 1.6, size);
@@ -301,27 +319,19 @@ class _ArcadePainter extends CustomPainter {
           center: Offset(b.x * size.width, b.y * size.height),
           width: b.w * size.width, height: 26);
       final col = b.hp > 1 ? config.accentColor : config.primaryColor;
-      cv.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6)),
-          Paint()..color = col);
-      cv.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6)),
-          Paint()..color = Colors.white.withOpacity(0.15)..style = PaintingStyle.stroke..strokeWidth = 2);
+      paintBeveledRect(cv, rect, 6, col);
     }
     final pw = 0.24 * size.width;
-    cv.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(e.px * size.width, 0.9 * size.height), width: pw, height: 16),
-        const Radius.circular(8)), Paint()..color = config.accentColor);
+    paintBeveledRect(cv, Rect.fromCenter(center: Offset(e.px * size.width, 0.9 * size.height), width: pw, height: 16), 8, config.accentColor);
     _shadow(cv, e.bx, e.by, 0.025, size);
-    cv.drawCircle(Offset(e.bx * size.width, e.by * size.height), 0.028 * size.width,
-        Paint()..color = Colors.white);
+    paintShadedCircle(cv, Offset(e.bx * size.width, e.by * size.height), 0.028 * size.width, Colors.white);
     if (e.ballHeld) _emoji(cv, '👆', e.px, 0.78, 40, size);
   }
 
   void _paintFlip(Canvas cv, Size size) {
     final e = engine;
-    cv.drawRect(Rect.fromLTWH(0, 0.9 * size.height, size.width, size.height * 0.1),
-        Paint()..color = config.primaryColor.withOpacity(0.5));
-    cv.drawRect(Rect.fromLTWH(0, 0, size.width, size.height * 0.1),
-        Paint()..color = config.primaryColor.withOpacity(0.5));
+    paintBeveledRect(cv, Rect.fromLTWH(0, 0.9 * size.height, size.width, size.height * 0.1), 0, config.primaryColor.withOpacity(0.5));
+    paintBeveledRect(cv, Rect.fromLTWH(0, 0, size.width, size.height * 0.1), 0, config.primaryColor.withOpacity(0.5));
     for (final o in e.obs) _emoji(cv, config.obstacleEmoji, o.x, o.y, o.r * size.width * 1.7, size);
     for (final c in e.cols) _emoji(cv, config.collectEmoji, c.x, c.y, c.r * size.width * 1.6, size);
     _player(cv, e, size, 0.3, e.py, e.pr);
@@ -343,8 +353,7 @@ class _ArcadePainter extends CustomPainter {
     }
     for (final m in e.misc) {
       if (m.kind == 4) _emoji(cv, config.obstacleEmoji, m.x, m.y, m.r * size.width * 1.7, size);
-      else if (m.kind == 7) cv.drawCircle(Offset(m.x * size.width, m.y * size.height),
-          m.r * size.width, Paint()..color = config.accentColor);
+      else if (m.kind == 7) paintShadedCircle(cv, Offset(m.x * size.width, m.y * size.height), m.r * size.width, config.accentColor);
     }
     _player(cv, e, size, 0.15, 0.85, e.pr * 0.8);
   }
@@ -356,16 +365,10 @@ class _ArcadePainter extends CustomPainter {
       final y = e.towerTopY * size.height + i * bh;
       if (y > size.height + bh) break;
       final wob = bw * (1 - i * 0.004);
-      cv.drawRRect(RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(e.towerX * size.width, y), width: wob, height: bh - 3),
-          const Radius.circular(4)),
-          Paint()..color = i.isEven ? config.primaryColor : config.accentColor.withOpacity(0.85));
+      paintBeveledRect(cv, Rect.fromCenter(center: Offset(e.towerX * size.width, y), width: wob, height: bh - 3), 4, i.isEven ? config.primaryColor : config.accentColor.withOpacity(0.85));
     }
     final by = e.dropping ? e.dropY : 0.15;
-    cv.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(e.stackX * size.width, by * size.height),
-            width: bw, height: bh - 3), const Radius.circular(4)),
-        Paint()..color = Colors.white.withOpacity(0.9));
+    paintBeveledRect(cv, Rect.fromCenter(center: Offset(e.stackX * size.width, by * size.height), width: bw, height: bh - 3), 4, Colors.white.withOpacity(0.9));
     _emoji(cv, config.bgEmoji, 0.5, 0.96, 40, size);
   }
 
@@ -374,9 +377,8 @@ class _ArcadePainter extends CustomPainter {
     for (final o in e.obs) {
       final x = o.x * size.width, w = o.w * size.width;
       final gapT = (o.y - o.a / 2) * size.height, gapB = (o.y + o.a / 2) * size.height;
-      final wp = Paint()..color = config.primaryColor;
-      cv.drawRect(Rect.fromLTWH(x - w / 2, 0, w, gapT), wp);
-      cv.drawRect(Rect.fromLTWH(x - w / 2, gapB, w, size.height - gapB), wp);
+      paintBeveledRect(cv, Rect.fromLTWH(x - w / 2, 0, w, gapT), 0, config.primaryColor, direction: Axis.horizontal);
+      paintBeveledRect(cv, Rect.fromLTWH(x - w / 2, gapB, w, size.height - gapB), 0, config.primaryColor, direction: Axis.horizontal);
       _emoji(cv, config.obstacleEmoji, o.x, o.y - o.a / 2 - 0.04, 30, size);
     }
     for (final c in e.cols) _emoji(cv, config.collectEmoji, c.x, c.y, c.r * size.width * 1.6, size);
@@ -387,25 +389,18 @@ class _ArcadePainter extends CustomPainter {
     final e = engine;
     for (final b in e.misc) {
       _shadow(cv, b.x, b.y, b.r, size);
-      cv.drawCircle(Offset(b.x * size.width, b.y * size.height), b.r * size.width,
-          Paint()..color = config.primaryColor);
-      cv.drawCircle(Offset(b.x * size.width, b.y * size.height), b.r * size.width * 0.55,
-          Paint()..color = config.accentColor);
+      paintShadedCircle(cv, Offset(b.x * size.width, b.y * size.height), b.r * size.width, config.primaryColor);
+      paintShadedCircle(cv, Offset(b.x * size.width, b.y * size.height), b.r * size.width * 0.55, config.accentColor);
       _emoji(cv, config.collectEmoji, b.x, b.y, b.r * size.width * 0.9, size);
     }
-    final fl = Paint()..color = config.accentColor..strokeWidth = 10..strokeCap = StrokeCap.round;
+    // Flippers are shaded by paintShadedLine below (3D treatment).
     final y0 = 0.88 * size.height;
     final la = e.flipSide < 0 && e.flipT > 0 ? -0.5 : 0.25;
     final ra = e.flipSide > 0 && e.flipT > 0 ? 0.5 : -0.25;
-    cv.drawLine(Offset(0.2 * size.width, y0),
-        Offset(0.2 * size.width + 0.14 * size.width * cos(la), y0 + 0.14 * size.width * sin(la)), fl);
-    cv.drawLine(Offset(0.8 * size.width, y0),
-        Offset(0.8 * size.width + 0.14 * size.width * cos(ra), y0 + 0.14 * size.width * sin(ra)), fl);
+    paintShadedLine(cv, Offset(0.2 * size.width, y0), Offset(0.2 * size.width + 0.14 * size.width * cos(la), y0 + 0.14 * size.width * sin(la)), config.accentColor, 10);
+    paintShadedLine(cv, Offset(0.8 * size.width, y0), Offset(0.8 * size.width + 0.14 * size.width * cos(ra), y0 + 0.14 * size.width * sin(ra)), config.accentColor, 10);
     _shadow(cv, e.bx, e.by, 0.025, size);
-    cv.drawCircle(Offset(e.bx * size.width, e.by * size.height), 0.03 * size.width,
-        Paint()..color = Colors.white);
-    cv.drawCircle(Offset(e.bx * size.width - 4, e.by * size.height - 4), 0.01 * size.width,
-        Paint()..color = Colors.white.withOpacity(0.8));
+    paintShadedCircle(cv, Offset(e.bx * size.width, e.by * size.height), 0.03 * size.width, Colors.white);
   }
 
   void _paintMaze(Canvas cv, Size size) {
@@ -414,11 +409,11 @@ class _ArcadePainter extends CustomPainter {
     final n = e.mazeN, m = e.mazeM;
     final cw = size.width / n, ch = (size.height * 0.92) / m;
     final y0 = size.height * 0.04;
-    final wallP = Paint()..color = config.primaryColor.withOpacity(0.85);
+    // Maze walls are beveled by paintBeveledRect below (3D treatment).
     for (int gy = 0; gy < m; gy++) {
       for (int gx = 0; gx < n; gx++) {
         if (e.maze[gy][gx] == 1) {
-          cv.drawRect(Rect.fromLTWH(gx * cw + 1, y0 + gy * ch + 1, cw - 2, ch - 2), wallP);
+          paintBeveledRect(cv, Rect.fromLTWH(gx * cw + 1, y0 + gy * ch + 1, cw - 2, ch - 2), 2, config.primaryColor.withOpacity(0.85), direction: Axis.horizontal);
         }
       }
     }
@@ -434,10 +429,7 @@ class _ArcadePainter extends CustomPainter {
     for (int i = 0; i < 3; i++) {
       final rr = radii[i] * size.width;
       final gapC = e.ringGaps[i] % 6.2832;
-      final p = Paint()..color = (i == e.ringIdx ? config.accentColor : config.primaryColor)
-        ..style = PaintingStyle.stroke..strokeWidth = 10;
-      cv.drawArc(Rect.fromCircle(center: Offset(cx, cy), radius: rr),
-          gapC + 0.28, 6.2832 - 0.56, false, p);
+      paintShadedArc(cv, Rect.fromCircle(center: Offset(cx, cy), radius: rr), gapC + 0.28, 6.2832 - 0.56, i == e.ringIdx ? config.accentColor : config.primaryColor, 10);
     }
     for (final c in e.cols) _emoji(cv, config.collectEmoji, c.x, c.y, c.r * size.width * 1.6, size);
     _player(cv, e, size, e.px, e.py, e.pr);
@@ -450,11 +442,9 @@ class _ArcadePainter extends CustomPainter {
       cv.drawLine(Offset(x, 0), Offset(x, size.height),
           Paint()..color = Colors.white.withOpacity(0.12)..strokeWidth = 4);
     }
-    cv.drawLine(Offset(0, 0.8 * size.height), Offset(size.width, 0.8 * size.height),
-        Paint()..color = config.accentColor..strokeWidth = 5);
+    paintShadedLine(cv, Offset(0, 0.8 * size.height), Offset(size.width, 0.8 * size.height), config.accentColor, 5);
     for (final n in e.misc) {
-      cv.drawCircle(Offset(n.x * size.width, n.y * size.height), n.r * size.width,
-          Paint()..color = config.primaryColor);
+      paintShadedCircle(cv, Offset(n.x * size.width, n.y * size.height), n.r * size.width, config.primaryColor);
       _emoji(cv, config.collectEmoji, n.x, n.y, n.r * size.width * 1.1, size);
     }
     _emoji(cv, config.playerEmoji, 0.5, 0.92, 52, size);
@@ -464,18 +454,16 @@ class _ArcadePainter extends CustomPainter {
     final e = engine;
     final cx = 0.5 * size.width, cy = 0.62 * size.height;
     final len = size.width * 0.42;
-    cv.drawCircle(Offset(cx, cy + 26), 10, Paint()..color = config.primaryColor);
+    paintShadedCircle(cv, Offset(cx, cy + 26), 10, config.primaryColor);
     cv.save();
     cv.translate(cx, cy);
     cv.rotate(e.beamA);
-    cv.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset.zero, width: len * 2, height: 14),
-        const Radius.circular(7)), Paint()..color = config.primaryColor);
+    paintBeveledRect(cv, Rect.fromCenter(center: Offset.zero, width: len * 2, height: 14), 7, config.primaryColor);
     cv.restore();
     final bx = cx + (e.px - 0.5) * size.width;
     final by = cy - e.beamA * (e.px - 0.5) * size.width - 20;
     _shadow(cv, bx / size.width, by / size.height + 0.02, 0.035, size);
-    cv.drawCircle(Offset(bx, by), 0.04 * size.width, Paint()..color = config.accentColor);
+    paintShadedCircle(cv, Offset(bx, by), 0.04 * size.width, config.accentColor);
     _emoji(cv, config.playerEmoji, bx / size.width, by / size.height, 30, size);
     if (e.gustF.abs() > 0.2) {
       _emoji(cv, '💨', e.gustF > 0 ? 0.12 : 0.88, 0.2, 40, size);
